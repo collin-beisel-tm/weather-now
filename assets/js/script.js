@@ -1,148 +1,182 @@
-// declare global variables
-const cityEl = document.getElementById("enter-city");
-const searchEl = document.getElementById("search-button");
-const clearEl = document.getElementById("clear-history");
-const nameEl = document.getElementById("city-name");
-const currentPicEl = document.getElementById("current-pic");
-const currentTempEl = document.getElementById("temperature");
-const currentHumidityEl = document.getElementById("humidity");
-const currentWindEl = document.getElementById("wind-speed");
-const currentUVEl = document.getElementById("UV-index");
-const historyEl = document.getElementById("history");
-const APIKey = "6ae068cf85652675bf56d87186029e0d";
-var fivedayEl = document.getElementById("fiveday-header");
-var todayweatherEl = document.getElementById("today-weather");
-let searchHistory = JSON.parse(localStorage.getItem("search")) || [];
+//declare global associations with HTML elements
+    const searchText = document.getElementById("search-text");
+    const searchBtn = document.getElementById("search-btn");
+    const clearHistory = document.getElementById("clr-history");
+    const displayCity = document.getElementById("display-city");
+    const icon = document.getElementById("icon");
+    const temp = document.getElementById("temp");
+    const humidity = document.getElementById("humidity");
+    const wind = document.getElementById("wind");
+    const uvEl = document.getElementById("UV-index");
+    const history = document.getElementById("history");
+    var forecastFive = document.getElementById("fiveday-header");
+    var currentWeather = document.getElementById("today-weather");
+    let searchHistory = JSON.parse(localStorage.getItem("search")) || [];
 
+    // Assigning a unique API key to a variable
+    const APIKey = "4e3aee51a2cf789ce2e18e5b2708edfa";
 
-//Function that will kick off the entire weather generator
+//call this function to kick off the app
+function startApp() {
+    //function that fetches data from multiple endpoints and creates dynamic html to to display current weather and forecast
+    function getWeather(cityName) {
+        // fetch current weather from open weather api
+        let queryURL = "https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&units=imperial&appid=" + APIKey;
+        fetch(queryURL)
+            //once you have the data convert it to JSON
+            .then(function (response) {
+                response.json().then(function (data) {
+                    //make current weather container visible
+                currentWeather.classList.remove("d-none");
 
-    //function to grab data from the current weather endpoint
-    var currentWeather = () => {
-        let currentURL = "https://api.openweathermap.org/data/2.5/weather?q="+ "little elm" + "&units=imperial&APPID=" + APIKey;
-        fetch(currentURL)
-        .then(function (response) {
-            response.json().then(function (data) {
-                console.log(data);
-                todayweatherEl.classList.remove("d-none");
-            //take api response and feed it to front end elements for current weather
-                let todayDate = data.name + " (" + luxon.DateTime.now().toLocaleString(luxon.DateTime.DATE_MED_WITH_WEEKDAY) + ") ";
+                // get current city and date and display in H3
+                const currentDate = new Date(data.dt * 1000);
+                displayCity.innerHTML = data.name + " (" + (currentDate.getMonth()+1) + "/" + currentDate.getDate() + "/" + currentDate.getFullYear() + ") ";
+                displayCity.setAttribute("class", "font-weight-bold");
 
-                nameEl.innerHTML = todayDate;
+                //take icon data from API and display it below city name/date
+                let currentIcon = data.weather[0].icon;
+                icon.setAttribute("src", "https://openweathermap.org/img/wn/" + currentIcon + "@2x.png");
+                icon.setAttribute("alt", data.weather[0].description);
 
-                let weatherPic = data.weather[0].icon;
-                currentPicEl.setAttribute("src", "https://openweathermap.org/img/wn/" + weatherPic + "@2x.png");
-                currentPicEl.setAttribute("alt", data.weather[0].description);
-                currentTempEl.innerHTML = "Temperature: " + (data.main.temp) + " &#176F";
-                currentHumidityEl.innerHTML = "Humidity: " + data.main.humidity + "%";
-                currentWindEl.innerHTML = "Wind Speed: " + data.wind.speed + " MPH";
-
-                // fetch UV Index deta and change UI element color based on values
-                let lat = data.coord.lat;
-                let lon = data.coord.lon;
-                let indexURL = "https://api.openweathermap.org/data/2.5/uvi/forecast?lat=" + lat + "&lon=" + lon + "&appid=" + APIKey + "&cnt=1";
-                fetch(indexURL)
+                //take values from temp, humidity, and wind speed and inject them into the associated P element
+                temp.innerHTML = "<b>Temperature: </b>" + data.main.temp + " &#176F";
+                humidity.innerHTML = "<b>Humidity: </b>" + data.main.humidity + "%";
+                wind.innerHTML = "<b>Wind Speed: </b>" + data.wind.speed + " MPH";
+                
+                // fetch UV index data from API
+                let fetchUV = "https://api.openweathermap.org/data/2.5/uvi/forecast?lat=" + data.coord.lat + "&lon=" + data.coord.lon + "&units=imperial&appid=" + APIKey + "&cnt=1";
+                fetch(fetchUV)
+                    // then convert the data to JSON
                     .then(function (response) {
                         response.json().then(function (data) {
-                            console.log(data);
+
+                            uvEl.innerHTML = "<b>UV Index: </b>"
+                            //then create a new html element to display the UV index
                             let UVIndex = document.createElement("span");
-                        
-                            //show appropriate colors for UV safety.
-                            if (data[0].value < 4 ) {
-                                UVIndex.setAttribute("class", "badge badge-success");
+                            UVIndex.innerHTML =  + Math.floor(data[0].value);
+                            uvEl.append(UVIndex);
+                            
+                            //if else statement to set the color of UV index element based on UV severity
+                            if (data[0].value < 3 ) {
+                                UVIndex.setAttribute("class", "badge  badge-pill badge-success");
                             }
-                            else if (data[0].value < 7) {
-                                UVIndex.setAttribute("class", "badge badge-warning");
+                            else if (data[0].value < 6) {
+                                UVIndex.setAttribute("class", "badge badge-pill badge-warning badge-lighten-1");
+                            }
+                            else if (data[0].value < 8) {
+                                UVIndex.setAttribute("class", "badge badge-pill badge-warning badge-darken-3");
+                            }
+                            else if (data[0].value < 11) {
+                                UVIndex.setAttribute("class", "badge badge-pill badge-danger badge-lighten-1");
                             }
                             else {
-                                UVIndex.setAttribute("class", "badge badge-danger");
+                                UVIndex.setAttribute("class", "badge badge-pill badge-danger badge-darken-3");
                             }
-                            console.log(data[0].value)
-                            UVIndex.innerHTML = data[0].value;
-                            currentUVEl.innerHTML = "UV Index: ";
-                            currentUVEl.append(UVIndex);
-                        });   
                     });
-
-                // Get 5 day forecast for this city
-                let city = data.id;
-                let fiveDayURL = "https://api.openweathermap.org/data/2.5/forecast?id=" + city + "&units=imperial&" + "&appid=" + APIKey;
-                fetch(fiveDayURL)
+                
+                // Fetch the forecast data from the forecast endpoint
+                let forecastQueryURL = "https://api.openweathermap.org/data/2.5/forecast?id=" + data.id + "&units=imperial&appid=" + APIKey;
+                fetch(forecastQueryURL)
+                    //then convert the data to JSON
                     .then(function (response) {
-
-                        //  Parse response to display forecast for next 5 days
                         response.json().then(function (data) {
-                            console.log(data);
 
-                        fivedayEl.classList.remove("d-none");
-                        const forecastEls = document.querySelectorAll(".forecast");
-                        for (i = 0; i < forecastEls.length; i++) {
-                            forecastEls[i].innerHTML = "";
-                            const forecastIndex = i * 8 + 4;
-                            const forecastDate = new Date(data.list[forecastIndex].dt * 1000);
-                            const forecastDay = forecastDate.getDate();
-                            const forecastMonth = forecastDate.getMonth() + 1;
-                            const forecastYear = forecastDate.getFullYear();
-                            const forecastDateEl = document.createElement("p");
-                            forecastDateEl.setAttribute("class", "mt-3 mb-0 forecast-date");
-                            forecastDateEl.innerHTML = forecastMonth + "/" + forecastDay + "/" + forecastYear;
-                            forecastEls[i].append(forecastDateEl);
+                        //Then make the forecast container visible
+                        forecastFive.classList.remove("d-none");
+                        
+                        //  associate each div with the class of forecast to a variable
+                        const forecastCards = document.querySelectorAll(".forecast");
 
-                            // Icon for current weather
-                            const forecastWeatherEl = document.createElement("img");
-                            forecastWeatherEl.setAttribute("src", "https://openweathermap.org/img/wn/" + data.list[forecastIndex].weather[0].icon + "@2x.png");
-                            forecastWeatherEl.setAttribute("alt", data.list[forecastIndex].weather[0].description);
-                            forecastEls[i].append(forecastWeatherEl);
-                            const forecastTempEl = document.createElement("p");
-                            forecastTempEl.innerHTML = "Temp: " + (data.list[forecastIndex].main.temp) + " &#176F";
-                            forecastEls[i].append(forecastTempEl);
-                            const forecastHumidityEl = document.createElement("p");
-                            forecastHumidityEl.innerHTML = "Humidity: " + data.list[forecastIndex].main.humidity + "%";
-                            forecastEls[i].append(forecastHumidityEl);
-                            }
-                        });
+                        //loop through each div with the class of forecast and create elements to display date, img, temp, wind, and humidity
+                        for (i = 0; i < forecastCards.length; i++) {
+
+                            //pull date data for each forecast card and append a date element
+                            forecastCards[i].innerHTML = "";
+                            const index = i * 8 + 4;
+                            const setDate = new Date(data.list[index].dt * 1000);
+                            const setDateEl = document.createElement("p");
+                            setDateEl.setAttribute("class", "mt-3 mb-0 forecast-date font-weight-bold text-dark");
+                            setDateEl.innerHTML = (setDate.getMonth() + 1) + "/" + setDate.getDate() + "/" + setDate.getFullYear();
+                            forecastCards[i].append(setDateEl);
+
+                            // create img element for each card and set alt tag to it's icon description
+                            const forecastImgs = document.createElement("img");
+                            forecastImgs.setAttribute("src", "https://openweathermap.org/img/wn/" + data.list[index].weather[0].icon + "@2x.png");
+                            forecastImgs.setAttribute("alt", data.list[index].weather[0].description);
+                            forecastCards[i].append(forecastImgs);
+                            
+                            //create elements for forecast temp and append to card
+                            const forecastTemps = document.createElement("p");
+                            forecastTemps.innerHTML = "<b> Temp:</b> " + data.list[index].main.temp + " &#176F";
+                            forecastCards[i].append(forecastTemps);
+
+                            //create elements for forecast wind and append to card
+                            const forecastWinds = document.createElement("p");
+                            forecastWinds.innerHTML = "<b>Wind Speed:</b> " + "<br>" + data.list[index].wind.speed + " MPH";
+                            forecastCards[i].append(forecastWinds);
+
+                            //create elements for forecast humidity and append to card
+                            const forecastHumiditys = document.createElement("p");
+                            forecastHumiditys.innerHTML = "<b>Humidity:</b> " + data.list[index].main.humidity + "%";
+                            forecastCards[i].append(forecastHumiditys);
+                        }
                     })
+                });
             });
         });
+    });
+}
 
-    // Get history from local storage if any
-    searchEl.addEventListener("click", () => {
-        const searchTerm = cityEl.value;
-        currentWeather(searchTerm);
+    // When the user clicks the search button...
+    searchBtn.addEventListener("click", function () {
+        
+        //take the text they input in the search bar and set it to variable SearchTerm
+        const searchTerm = searchText.value;
+
+        //push the searchTerm through as a parameter in getWeather function
+        getWeather(searchTerm);
+
+        //push search history array contents that match the search term to local storage
         searchHistory.push(searchTerm);
         localStorage.setItem("search", JSON.stringify(searchHistory));
-        renderSearchHistory();
+        showHistory();
     })
 
-    // Clear History button
-    clearEl.addEventListener("click", () =>  {
+    // When the user clicks the clear history button...
+    clearHistory.addEventListener("click", function () {
+        
+        //delete all local storage and set history array to empty
         localStorage.clear();
         searchHistory = [];
-        renderSearchHistory();
+        showHistory();
     })
 
-
-    function renderSearchHistory() {
-        historyEl.innerHTML = "";
+    //create html elements for each previous search
+    function showHistory() {
+        history.innerHTML = "";
+        
+        // loop through the history array and create an input element for each previous search with the listed attributes
         for (let i = 0; i < searchHistory.length; i++) {
             const historyItem = document.createElement("input");
             historyItem.setAttribute("type", "text");
             historyItem.setAttribute("readonly", true);
-            historyItem.setAttribute("class", "form-control d-block bg-white");
+            historyItem.setAttribute("class", "form-control d-block m-1 bg-secondary text-white text-capitalize text-center");
             historyItem.setAttribute("value", searchHistory[i]);
+
+            //when the user clicks one of their previous searches, pass the name of the previous search into the get weather function
             historyItem.addEventListener("click", function () {
-                currentWeather(historyItem.value);
+                getWeather(historyItem.value);
             })
-            historyEl.append(historyItem);
+            history.append(historyItem);
         }
     }
 
-    renderSearchHistory();
+    showHistory();
     if (searchHistory.length > 0) {
-        currentWeather(searchHistory[searchHistory.length - 1]);
+        getWeather(searchHistory[searchHistory.length - 1]);
     }
+    
+}
 
-    };
-
-
-currentWeather();
+startApp();
