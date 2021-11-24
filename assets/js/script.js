@@ -12,7 +12,6 @@
     var forecastFive = document.getElementById("fiveday-header");
     var currentWeather = document.getElementById("today-weather");
     let searchHistory = JSON.parse(localStorage.getItem("search")) || [];
-
     // Assigning a unique API key to a variable
     const APIKey = "4e3aee51a2cf789ce2e18e5b2708edfa";
 
@@ -40,7 +39,7 @@ function startApp() {
                 icon.setAttribute("alt", data.weather[0].description);
 
                 //take values from temp, humidity, and wind speed and inject them into the associated P element
-                temp.innerHTML = "<b>Temperature: </b>" + data.main.temp + " &#176F";
+                temp.innerHTML = "<b>Temperature: </b>" + Math.round(data.main.temp) + " &#176F";
                 humidity.innerHTML = "<b>Humidity: </b>" + data.main.humidity + "%";
                 wind.innerHTML = "<b>Wind Speed: </b>" + data.wind.speed + " MPH";
                 
@@ -108,7 +107,7 @@ function startApp() {
                             
                             //create elements for forecast temp and append to card
                             const forecastTemps = document.createElement("p");
-                            forecastTemps.innerHTML = "<b> Temp:</b> " + data.list[index].main.temp + " &#176F";
+                            forecastTemps.innerHTML = "<b> Temp:</b> " + Math.round(data.list[index].main.temp) + " &#176F";
                             forecastCards[i].append(forecastTemps);
 
                             //create elements for forecast wind and append to card
@@ -128,7 +127,7 @@ function startApp() {
     });
 }
 
-    // When the user clicks the search button...
+    // When the user clicks the search button... 
     searchBtn.addEventListener("click", function () {
         
         //take the text they input in the search bar and set it to variable SearchTerm
@@ -141,6 +140,25 @@ function startApp() {
         searchHistory.push(searchTerm);
         localStorage.setItem("search", JSON.stringify(searchHistory));
         showHistory();
+        clearSearchBar();
+    })
+
+    // or if the user presses enter on the keyboard in the search bar
+    searchText.addEventListener("keypress", function (e) {
+        //if the enter key is pressed
+        if (e.key === "Enter") {
+        //take the text they input in the search bar and set it to variable SearchTerm
+        const searchTerm = searchText.value;
+
+        //push the searchTerm through as a parameter in getWeather function
+        getWeather(searchTerm);
+
+        //push search history array contents that match the search term to local storage
+        searchHistory.push(searchTerm);
+        localStorage.setItem("search", JSON.stringify(searchHistory));
+        showHistory();
+        clearSearchBar();
+        }
     })
 
     // When the user clicks the clear history button...
@@ -177,6 +195,9 @@ function startApp() {
         getWeather(searchHistory[searchHistory.length - 1]);
     }
     
+    var clearSearchBar = () => {
+        searchText.value= "";
+    }
 }
 
 startApp();
