@@ -19,7 +19,7 @@
 - Building this application increased my knowledge of server side API integration, and dynamic HTML.
 
 ## Features
-- search bar for users to look up any city
+- search bar for users to look up any city (works on click of search button and keypress of enter key... clears text after every search)
 - search history pane for users to easily access previous searches
 - current weather card that displays the City, Date, and current: Temp, humidity, Wind Speed, and UV Index
 - 5 day forecast pane that displays cards for the next 5 days weather data
